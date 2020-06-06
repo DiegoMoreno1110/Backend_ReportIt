@@ -1,0 +1,21 @@
+{
+  "name": "backend_report_it",
+  "version": "1.0.0",
+  "description": "Back end de la webapp Report it",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "express",
+    "webapp"
+  ],
+  "author": "Report It",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "mongoose": "^5.9.18",
+    "morgan": "^1.10.0"
+  }
+}
