@@ -1,7 +1,13 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var morgan = require('morgan');
+var mongoose = require('mongoose');
+var User = require('./models/users')
 
+
+/*-----------------------*/
+/* CONFIGURACIÓN EXPRESS */
+/*-----------------------*/
 var app = express();
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -10,10 +16,148 @@ app.use(bodyParser.json());
 var puertoHTTP = process.env.PORT || 8080;
 
 var router = express.Router();
+
+router.use(function(req, res, next) {
+    console.log("Entrando a APi");
+    next();
+});
+
 router.get('/', function(req, res) {
-    res.json({ mensaje: "Creando API" })
+    res.json({ mensaje: "Primer API" })
 });
 
 app.use('/api', router);
 app.listen(puertoHTTP);
-console.log('Se ha levantado la aplicación en el puerto' + puertoHTTP);
+console.log('Se ha levantado la aplicación en el puerto ' + puertoHTTP);
+
+/*---------------*/
+/* CONEXIÓN MONGO*/
+/*---------------*/
+// usercontraseñaReportIt
+const uri = 'mongodb+srv://user:usercontraseñaReportIt@reportit-4chws.mongodb.net/<dbname>?retryWrites=true&w=majority';
+mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+var db = mongoose.connection;
+db.on('error', console.error.bind(console, 'problema de conexión con la DB'));
+db.once('openUri', function() {
+    console.log("Se estableció la conexión a la DB");
+});
+
+/*--------------------------*/
+/* DECLARACION DE API USERS */
+/*--------------------------*/
+router.route('/users')
+    .post(async function(req, resp) {
+        var user = new User();
+        user.nombre = req.body.nombre;
+        user.correo = req.body.correo;
+        user.contraseña = req.body.contraseña;
+
+
+        if (user.correo == "") {
+            resp.status(400).send({ error: "El correo está vacío" });
+            return;
+        }
+
+        try {
+            await user.save(function(err) {
+                if (err) {
+                    console.log(err);
+                    resp.status(500).send({ mensaje: err.message });
+                    return;
+                }
+
+                resp.json({ mensaje: 'Usuario creado' });
+                return;
+            });
+        } catch (error) {
+            if (error.name == "ValidatorError") {
+                resp.status(400).send({ error: error.message });
+            } else {
+                resp.status(500).send({ mensaje: error })
+            }
+            return;
+        }
+    }).get(function(req, resp) {
+
+        limite = parseInt(req.body.limite);
+        nombre = req.body.nombre;
+
+        if (nombre != "" || nombre == null) {
+            User.find({ nombre: nombre }, function(err, users) {
+                if (err) {
+                    resp.status(500).send(err);
+                }
+
+                resp.status(200).send(users);
+                return;
+
+            });
+
+        } else {
+
+            User.find(function(err, users) {
+                if (err) {
+                    resp.status(500).send(err);
+                }
+
+                resp.status(200).send(users);
+                return;
+
+            }).limit(limite);
+        }
+    });
+
+
+router.route('/users/:id_user')
+    .get(function(req, res) {
+        User.findById(req.params.id_user, function(error, user) {
+            if (error) {
+                res.status(404).send({ mensaje: "Usuario no encontrado" });
+                return;
+            }
+
+            if (user == null) {
+                res.status(404).send({ mensaje: "Id no es de un usuario" });
+                return;
+            }
+
+            res.status(200).send(user);
+
+        });
+    }).put(function(req, res) {
+        User.findById(req.params.id_user, async function(error, user) {
+            if (error) {
+                res.status(404).send({ mensaje: "Usuario no encontrado" });
+                return;
+            }
+
+            if (user == null) {
+                res.status(404).send({ mensaje: "Id no es de un usuario" });
+                return;
+            }
+
+            user.nombre = req.body.nombre;
+            user.correo = req.body.correo;
+            user.contraseña = req.body.contraseña;
+
+            await user.save(function(err) {
+                if (err) {
+                    res.status(500).send(err);
+                    return;
+                }
+
+                res.status(200).send({ mensaje: "Usuario Actualizado" });
+            });
+
+        });
+    }).delete(function(req, res) {
+        User.deleteOne({ _id: req.params.id_user }, function(err, user) {
+            if (err) {
+                res.send(error);
+
+            }
+            res.status(200).json({ mensaje: "Usuario borrado con éxito" })
+
+        });
+    });
