@@ -3,6 +3,7 @@ var bodyParser = require('body-parser');
 var morgan = require('morgan');
 var mongoose = require('mongoose');
 var User = require('./models/users')
+var Report = require('./models/report')
 
 
 /*-----------------------*/
@@ -158,6 +159,151 @@ router.route('/users/:id_user')
 
             }
             res.status(200).json({ mensaje: "Usuario borrado con éxito" })
+
+        });
+    });
+
+    /*--------------------------/
+    /* DECLARACION DE API REPORTS */
+    /*--------------------------*/
+
+    router.route('/reports')
+    .post(async function(req, resp) {
+        var report = new Report();
+        report.nombre = req.body.nombre;
+        report.titulo = req.body.titulo;
+        report.fecha = req.body.fecha;
+        report.descripcion = req.body.descripcion;
+        report.foto = req.body.foto;
+
+
+        if (report.titulo == "") {
+            resp.status(400).send({ error: "El titulo está vacío" });
+            return;
+        }
+
+        if (report.nombre == "") {
+            resp.status(400).send({ error: "El nombre está vacío" });
+            return;
+        }
+
+        if (report.fecha == "") {
+            resp.status(400).send({ error: "La fecha está vacío" });
+            return;
+        }
+
+        if (report.descripcion == "") {
+            resp.status(400).send({ error: "La descripcion está vacío" });
+            return;
+        }
+
+        if (report.foto == "") {
+            resp.status(400).send({ error: "La foto está vacío" });
+            return;
+        }
+
+
+        try {
+            await report.save(function(err) {
+                if (err) {
+                    console.log(err);
+                    resp.status(500).send({ mensaje: err.message });
+                    return;
+                }
+
+                resp.json({ mensaje: 'Reporte creado' });
+                return;
+            });
+        } catch (error) {
+            if (error.name == "ValidatorError") {
+                resp.status(400).send({ error: error.message });
+            } else {
+                resp.status(500).send({ mensaje: error })
+            }
+            return;
+        }
+    }).get(function(req, resp) {
+
+        limite = parseInt(req.body.limite);
+        titulo = req.body.titulo;
+
+        if (titulo != "" || titulo == null) {
+            Report.find({ titulo: titulo }, function(err, reports) {
+                if (err) {
+                    resp.status(500).send(err);
+                }
+
+                resp.status(200).send(reports);
+                return;
+
+            });
+
+        } else {
+
+            Report.find(function(err, reports) {
+                if (err) {
+                    resp.status(500).send(err);
+                }
+
+                resp.status(200).send(reports);
+                return;
+
+            }).limit(limite);
+        }
+    });
+
+
+router.route('/reports/:id_report')
+    .get(function(req, res) {
+        Report.findById(req.params.id_report, function(error, report) {
+            if (error) {
+                res.status(404).send({ mensaje: "Reporte no encontrado" });
+                return;
+            }
+
+            if (report == null) {
+                res.status(404).send({ mensaje: "Id no es de un reporte" });
+                return;
+            }
+
+            res.status(200).send(report);
+
+        });
+    }).put(function(req, res) {
+        Report.findById(req.params.id_report, async function(error, report) {
+            if (error) {
+                res.status(404).send({ mensaje: "Reporte no encontrado" });
+                return;
+            }
+
+            if (report == null) {
+                res.status(404).send({ mensaje: "Id no es de un reporte" });
+                return;
+            }
+
+            report.nombre = req.body.nombre;
+            report.titulo = req.body.titulo;
+            report.fecha = req.body.fecha;
+            report.descripcion = req.body.descripcion;
+            report.foto = req.body.foto;
+
+            await report.save(function(err) {
+                if (err) {
+                    res.status(500).send(err);
+                    return;
+                }
+
+                res.status(200).send({ mensaje: "Reporte Actualizado" });
+            });
+
+        });
+    }).delete(function(req, res) {
+        Report.deleteOne({ _id: req.params.id_report }, function(err, report) {
+            if (err) {
+                res.send(error);
+
+            }
+            res.status(200).json({ mensaje: "Reporte borrado con éxito" })
 
         });
     });
