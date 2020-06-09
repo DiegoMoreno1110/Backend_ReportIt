@@ -4,6 +4,7 @@ var morgan = require('morgan');
 var mongoose = require('mongoose');
 var User = require('./models/users')
 var Report = require('./models/report')
+var Admin = require('./models/admins');
 
 
 /*-----------------------*/
@@ -305,5 +306,106 @@ router.route('/reports/:id_report')
             }
             res.status(200).json({ mensaje: "Reporte borrado con éxito" })
 
+        });
+    });
+
+/*--------------------------*/
+/* DECLARACION DE API ADMINS */
+/*--------------------------*/
+router.route('/admins')
+    .post(async function (req, res) {
+        var admin = new Admin();
+        admin.nombre = req.body.nombre;
+        admin.correo = req.body.correo;
+        admin.contraseña = req.body.contraseña;
+
+        if(admin.nombre == ""){
+            res.status(400).send({error: "Nombre de admin vacio"});
+            return;
+        }else if(admin.correo == ""){
+            res.status(400).send({error: "Correo de admin vacio"});
+            return;
+        }else if(admin.contraseña == ""){
+            res.status(400).send({error: "Contraseña vacia"});
+            return;
+        }
+
+        try{
+            await admin.save(function(err){
+                if(err){
+                    res.status(500).send({mensaje: err.message});
+                    return;
+                }
+                res.json({mensaje: "Administrador creado"});
+                return;
+            });
+        } catch(error) {
+            if(error.nombre == "ValidationError"){
+                res.status(400).send({mensaje: error.message});
+            } else {
+                res.status(500).send({mensaje: error});
+            }
+            return;
+        }
+    }).get(function(req, res){
+        limite = parseInt(req.body.limite);
+        nombre = req.body.nombre;
+        if(nombre != "" || nombre == null){
+            Admin.find(function(err, admins){
+                if(err){
+                    res.send(err);
+                }
+                res.status(200).send(admins);
+            });
+        } else {
+            Admin.find(function(err, admins){
+                if(err){
+                    res.status(500).send(err);
+                }
+                res.status(200).send(admins);
+                return;
+            }).limit(limite);
+        }
+    });
+router.route('/admins/:id_admin')
+    .get(function(req, res){
+        Admin.findById(req.params.id_admin, function(error, admin){
+            if (error) {
+                res.status(404).send({ mensaje: "Admin no encontrado" });
+                return;
+            }
+            if (admin == null) {
+                res.status(404).send({ mensaje: "Id no es de un admin" });
+                return;
+            }
+            res.status(200).send(admin);
+        });
+    }).put(function(req, res){
+        Admin.findById(req.params.id_admin, async function(error, admin){
+            if (error) {
+                res.status(404).send({ mensaje: "Admin no encontrado" });
+                return;
+            }
+            if (admin == null) {
+                res.status(404).send({ mensaje: "Id no es de un admin" });
+                return;
+            }
+            admin.nombre = req.body.nombre;
+            admin.correo = req.body.correo;
+            admin.contraseña = req.body.contraseña;
+            await admin.save(function(err){
+                if(err){
+                    res.status(500).send(err);
+                    return;
+                }
+                res.status(200).send({mensaje: "Admin actualizado"});
+            });
+        });
+    }).delete(function(req, res){
+        Admin.deleteOne({_id: req.params.id_admin}, function(err, admin){
+            if(err){
+                res.send(error);
+            }
+            res.status(200).json({mensaje: "Admin eliminado con exito"})
         });
     });
