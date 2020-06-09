@@ -2,10 +2,19 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var morgan = require('morgan');
 var mongoose = require('mongoose');
+const cors = require('cors');
 var User = require('./models/users')
 var Report = require('./models/report')
 var Admin = require('./models/admins');
 
+
+/*---------------*/
+/* CONFIGURACIÓN CORS*/
+/*---------------*/
+var corsOptions = {
+    origin: '*',
+    optionSuccessStatus: 200
+}
 
 /*-----------------------*/
 /* CONFIGURACIÓN EXPRESS */
@@ -15,12 +24,15 @@ app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+app.use(cors(corsOptions)); //CORS
+
 var puertoHTTP = process.env.PORT || 8080;
 
 var router = express.Router();
 
 router.use(function(req, res, next) {
     console.log("Entrando a APi");
+    res.header("Access-Control-Allow-Origin", "*");
     next();
 });
 
