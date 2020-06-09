@@ -49,6 +49,10 @@ console.log('Se ha levantado la aplicación en el puerto ' + puertoHTTP);
 /*---------------*/
 // usercontraseñaReportIt
 const uri = 'mongodb+srv://user:usercontraseñaReportIt@reportit-4chws.mongodb.net/<dbname>?retryWrites=true&w=majority';
+/*
+    No borrar comentario:
+    const uri = 'mongodb+srv://maderalaboratorio:maderalaboratorio@cluster0-lemtl.mongodb.net/maderalLaboratorio?retryWrites=true&w=majority';
+*/
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 var db = mongoose.connection;
@@ -363,7 +367,7 @@ router.route('/admins')
         limite = parseInt(req.body.limite);
         nombre = req.body.nombre;
         if(nombre != "" || nombre == null){
-            Admin.find(function(err, admins){
+            Admin.find({nombre: nombre}, function(err, admins){
                 if(err){
                     res.send(err);
                 }
