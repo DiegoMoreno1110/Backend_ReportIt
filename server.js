@@ -50,8 +50,8 @@ console.log('Se ha levantado la aplicación en el puerto ' + puertoHTTP);
 // usercontraseñaReportIt
 const uri = 'mongodb+srv://user:usercontraseñaReportIt@reportit-4chws.mongodb.net/<dbname>?retryWrites=true&w=majority';
 /*
-    No borrar comentario:
-    const uri = 'mongodb+srv://maderalaboratorio:maderalaboratorio@cluster0-lemtl.mongodb.net/maderalLaboratorio?retryWrites=true&w=majority';
+No borrar comentario:
+const uri = 'mongodb+srv://maderalaboratorio:maderalaboratorio@cluster0-lemtl.mongodb.net/maderalLaboratorio?retryWrites=true&w=majority';
 */
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
@@ -333,7 +333,7 @@ router.route('/admins')
         var admin = new Admin();
         admin.nombre = req.body.nombre;
         admin.correo = req.body.correo;
-        admin.contraseña = req.body.contraseña;
+        admin.contrasena = req.body.contrasena;
 
         if(admin.nombre == ""){
             res.status(400).send({error: "Nombre de admin vacio"});
@@ -341,7 +341,7 @@ router.route('/admins')
         }else if(admin.correo == ""){
             res.status(400).send({error: "Correo de admin vacio"});
             return;
-        }else if(admin.contraseña == ""){
+        }else if(admin.contrasena == ""){
             res.status(400).send({error: "Contraseña vacia"});
             return;
         }
@@ -363,7 +363,18 @@ router.route('/admins')
             }
             return;
         }
-    }).get(function(req, res){
+    })
+    .get(function (req, res) {
+        Admin.find(function (err, admins) {
+          if (err) {
+            res.status(500).send(err);
+            return;
+          }
+          res.status(200).send(admins);
+          return;
+        });
+    });
+    /*.get(function(req, res){
         limite = parseInt(req.body.limite);
         nombre = req.body.nombre;
         if(nombre != "" || nombre == null){
@@ -383,6 +394,7 @@ router.route('/admins')
             }).limit(limite);
         }
     });
+    */
 router.route('/admins/:id_admin')
     .get(function(req, res){
         Admin.findById(req.params.id_admin, function(error, admin){
@@ -408,7 +420,7 @@ router.route('/admins/:id_admin')
             }
             admin.nombre = req.body.nombre;
             admin.correo = req.body.correo;
-            admin.contraseña = req.body.contraseña;
+            admin.contrasena = req.body.contrasena;
             await admin.save(function(err){
                 if(err){
                     res.status(500).send(err);

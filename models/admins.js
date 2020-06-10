@@ -10,7 +10,7 @@ var adminSchema = new Schema({
         type: String,
         required: true
     },
-    contraseña: {
+    contrasena: {
         type: String,
         required: true
     }
