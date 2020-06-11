@@ -3,9 +3,12 @@ var bodyParser = require('body-parser');
 var morgan = require('morgan');
 var mongoose = require('mongoose');
 const cors = require('cors');
+var multer  = require('multer');
 var User = require('./models/users')
 var Report = require('./models/report')
 var Admin = require('./models/admins');
+var Image = require('./models/image');
+
 
 
 /*---------------*/
@@ -15,6 +18,25 @@ var corsOptions = {
     origin: '*',
     optionSuccessStatus: 200
 }
+
+/**
+ * Configuracion multer
+ */
+var fs = require('fs'); 
+var path = require('path');
+var multer = require('multer'); 
+
+var upload = multer({ dest: 'uploads/' })
+var storage = multer.diskStorage({ 
+    destination: (req, file, cb) => { 
+        cb(null, 'uploads') 
+    }, 
+    filename: (req, file, cb) => { 
+        cb(null, file.fieldname + '-' + Date.now()) 
+    } 
+}); 
+  
+var upload = multer({ storage: storage }); 
 
 /*-----------------------*/
 /* CONFIGURACIÓN EXPRESS */
@@ -48,11 +70,11 @@ console.log('Se ha levantado la aplicación en el puerto ' + puertoHTTP);
 /* CONEXIÓN MONGO*/
 /*---------------*/
 // usercontraseñaReportIt
-const uri = 'mongodb+srv://user:usercontraseñaReportIt@reportit-4chws.mongodb.net/<dbname>?retryWrites=true&w=majority';
 /*
+const uri = 'mongodb+srv://user:usercontraseñaReportIt@reportit-4chws.mongodb.net/<dbname>?retryWrites=true&w=majority';
 No borrar comentario:
-const uri = 'mongodb+srv://maderalaboratorio:maderalaboratorio@cluster0-lemtl.mongodb.net/maderalLaboratorio?retryWrites=true&w=majority';
 */
+const uri = 'mongodb+srv://maderalaboratorio:maderalaboratorio@cluster0-lemtl.mongodb.net/maderalLaboratorio?retryWrites=true&w=majority';
 mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 var db = mongoose.connection;
@@ -363,8 +385,7 @@ router.route('/admins')
             }
             return;
         }
-    })
-    .get(function (req, res) {
+    }).get(function (req, res) {
         Admin.find(function (err, admins) {
           if (err) {
             res.status(500).send(err);
@@ -436,4 +457,60 @@ router.route('/admins/:id_admin')
             }
             res.status(200).json({mensaje: "Admin eliminado con exito"})
         });
+    });
+
+/**
+ * Declaracion de API image
+ *
+router.route('/images').post(upload.single('image'), (req, res, next) => { 
+    var obj = { 
+        name: req.body.name, 
+        desc: req.body.desc, 
+        img: { 
+            data: fs.readFileSync(path.join(__dirname + '/uploads/' + req.file.filename)), 
+            contentType: 'image/png'
+        } 
+    } 
+    Image.create(obj, (err, item) => { 
+        if (err) { 
+            console.log(err); 
+        } 
+        else { 
+            // item.save(); 
+            res.redirect('/'); 
+        } 
+    }); 
+}).*/
+// app.get('/images', (req, res) => {
+//     Image.find({}, (err, items) => { 
+//         if (err) { 
+//             console.log(err); 
+//         } 
+//         else { 
+//             res.render('app', { items: items }); 
+//         } 
+//     });
+// })
+
+router.route('/images')
+    .get(function (req, res) {
+        Image.find(function (err, items) {
+          if (err) {
+            res.status(500).send(err);
+            return;
+          }
+          res.status(200).send(items);
+        });
+    }).post(async function (req, res) {
+        var image = new Image();
+        image.name = req.body.name;
+        image.desc = req.body.desc;
+        image.img = {
+            data: fs.readFileSync(path.join(__dirname + '/uploads/' + req.file.filename)),
+            contentType: 'image/png'
+        }
+        Image.create(obj, (err, item) => {
+            if(err) console.log(err);
+            
+        })
     });
