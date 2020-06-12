@@ -3,13 +3,13 @@ var bodyParser = require('body-parser');
 var morgan = require('morgan');
 var mongoose = require('mongoose');
 const cors = require('cors');
-var multer  = require('multer');
 var User = require('./models/users')
 var Report = require('./models/report')
 var Admin = require('./models/admins');
+
+const fs = require("fs");
+const upload = require("./multer/storage");
 var Image = require('./models/image');
-
-
 
 /*---------------*/
 /* CONFIGURACIÓN CORS*/
@@ -18,25 +18,6 @@ var corsOptions = {
     origin: '*',
     optionSuccessStatus: 200
 }
-
-/**
- * Configuracion multer
- */
-var fs = require('fs'); 
-var path = require('path');
-var multer = require('multer'); 
-
-var upload = multer({ dest: 'uploads/' })
-var storage = multer.diskStorage({ 
-    destination: (req, file, cb) => { 
-        cb(null, 'uploads') 
-    }, 
-    filename: (req, file, cb) => { 
-        cb(null, file.fieldname + '-' + Date.now()) 
-    } 
-}); 
-  
-var upload = multer({ storage: storage }); 
 
 /*-----------------------*/
 /* CONFIGURACIÓN EXPRESS */
@@ -75,12 +56,12 @@ const uri = 'mongodb+srv://user:usercontraseñaReportIt@reportit-4chws.mongodb.n
 No borrar comentario:
 */
 const uri = 'mongodb+srv://maderalaboratorio:maderalaboratorio@cluster0-lemtl.mongodb.net/maderalLaboratorio?retryWrites=true&w=majority';
-mongoose.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true });
-
-var db = mongoose.connection;
-db.on('error', console.error.bind(console, 'problema de conexión con la DB'));
-db.once('openUri', function() {
-    console.log("Se estableció la conexión a la DB");
+mongoose
+.connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+.then((db)=>{
+    console.log("Conexion éxitosa con la DB...");
+}).catch((err)=>{
+    console.log("Error con la DB " + err);
 });
 
 /*--------------------------*/
@@ -461,56 +442,19 @@ router.route('/admins/:id_admin')
 
 /**
  * Declaracion de API image
- *
-router.route('/images').post(upload.single('image'), (req, res, next) => { 
-    var obj = { 
-        name: req.body.name, 
-        desc: req.body.desc, 
-        img: { 
-            data: fs.readFileSync(path.join(__dirname + '/uploads/' + req.file.filename)), 
-            contentType: 'image/png'
-        } 
-    } 
-    Image.create(obj, (err, item) => { 
-        if (err) { 
-            console.log(err); 
-        } 
-        else { 
-            // item.save(); 
-            res.redirect('/'); 
-        } 
-    }); 
-}).*/
-// app.get('/images', (req, res) => {
-//     Image.find({}, (err, items) => { 
-//         if (err) { 
-//             console.log(err); 
-//         } 
-//         else { 
-//             res.render('app', { items: items }); 
-//         } 
+ */
+// router.route('/images')
+//     .get(async (req, res, next) => {
+//         Image.find({}, (err, images)=>{
+//             if(err){
+//                 console.log(err);
+//                 return;
+//             } else {
+//                 //return the array of images found.
+//                 res.render("uploads", {
+//                     images: images
+//                 });
+//                 return;
+//             } 
+//         });
 //     });
-// })
-
-router.route('/images')
-    .get(function (req, res) {
-        Image.find(function (err, items) {
-          if (err) {
-            res.status(500).send(err);
-            return;
-          }
-          res.status(200).send(items);
-        });
-    }).post(async function (req, res) {
-        var image = new Image();
-        image.name = req.body.name;
-        image.desc = req.body.desc;
-        image.img = {
-            data: fs.readFileSync(path.join(__dirname + '/uploads/' + req.file.filename)),
-            contentType: 'image/png'
-        }
-        Image.create(obj, (err, item) => {
-            if(err) console.log(err);
-            
-        })
-    });

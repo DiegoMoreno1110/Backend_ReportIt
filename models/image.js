@@ -3,15 +3,17 @@ var Schema = mongoose.Schema;
 
 var imageSchema = new Schema({ 
     name: {
-        type: String
-    }, 
+        type: String,
+        required: true
+    },    
     desc: {
-        type: String
+        type: String,
+        required: true
     },
-    img: { 
-        data: Buffer, 
-        contentType: String 
-    } 
+    path: {
+        type: String,
+        required: true
+    }
 }); 
 
 module.exports = mongoose.model('Image', imageSchema);
