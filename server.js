@@ -477,7 +477,6 @@ router.route('/images')
                 image.name = req.file.originalname;
                 image.contentType = req.file.mimetype;
                 image.path = req.file.path;
-                //image.text = req.file.size;
                 /* Tesseract JS */
                 const { createWorker } = require('tesseract.js');
                 const worker = createWorker();
@@ -487,9 +486,9 @@ router.route('/images')
                     await worker.initialize('eng')
                     const { data: { text } } = await worker.recognize('./images/' + path);
                     await worker.terminate()
-                    //console.log(text);
                     return text
                 }
+                /* Aqui termina tesseract */
                 let result = await getTextFromImage(req.file.filename);
                 image.text = result.replace(/\n/g, '');
                 image.save(()=>{
