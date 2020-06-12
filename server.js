@@ -309,28 +309,21 @@ router.route('/reports/:id_report')
             if (error) {
                 res.status(404).send({ mensaje: "Reporte no encontrado" });
                 return;
-            }
-
-            if (report == null) {
+            } else if (report == null) {
                 res.status(404).send({ mensaje: "Id no es de un reporte" });
                 return;
             }
-
             res.status(200).send(report);
-
         });
     }).put(function(req, res) {
         Report.findById(req.params.id_report, async function(error, report) {
             if (error) {
                 res.status(404).send({ mensaje: "Reporte no encontrado" });
                 return;
-            }
-
-            if (report == null) {
+            } else if (report == null) {
                 res.status(404).send({ mensaje: "Id no es de un reporte" });
                 return;
             }
-
             report.nombre = req.body.nombre;
             report.titulo = req.body.titulo;
             report.fecha = req.body.fecha;
@@ -351,10 +344,8 @@ router.route('/reports/:id_report')
         Report.deleteOne({ _id: req.params.id_report }, function(err, report) {
             if (err) {
                 res.send(error);
-
             }
             res.status(200).json({ mensaje: "Reporte borrado con éxito" })
-
         });
     });
 
