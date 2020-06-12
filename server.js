@@ -52,12 +52,12 @@ console.log('Se ha levantado la aplicación en el puerto ' + puertoHTTP);
 /*---------------*/
 // usercontraseñaReportIt
 
-const uri = 'mongodb+srv://user:usercontraseñaReportIt@reportit-4chws.mongodb.net/<dbname>?retryWrites=true&w=majority';
 
 /*No borrar comentario:
+const uri = 'mongodb+srv://user:usercontraseñaReportIt@reportit-4chws.mongodb.net/<dbname>?retryWrites=true&w=majority';
 DB Jorge Ivan
-const uri = 'mongodb+srv://maderalaboratorio:maderalaboratorio@cluster0-lemtl.mongodb.net/maderalLaboratorio?retryWrites=true&w=majority';
 */
+const uri = 'mongodb+srv://maderalaboratorio:maderalaboratorio@cluster0-lemtl.mongodb.net/maderalLaboratorio?retryWrites=true&w=majority';
 
 mongoose
     .connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -465,18 +465,33 @@ router.route('/admins/:id_admin')
 /**
  * Declaracion de API image
  */
-// router.route('/images')
-//     .get(async (req, res, next) => {
-//         Image.find({}, (err, images)=>{
-//             if(err){
-//                 console.log(err);
-//                 return;
-//             } else {
-//                 //return the array of images found.
-//                 res.render("uploads", {
-//                     images: images
-//                 });
-//                 return;
-//             } 
-//         });
-//     });
+router.route('/images')
+    .post(async function(req, res) {
+        upload(req, res, function(err){
+            if(req.file == null || req.file == undefined || req.file == ""){
+                return;
+            } else {
+                console.log(req.file);
+                let image = new Image();
+                image.name = req.file.originalname;
+                image.contentType = req.file.mimetype;
+                image.path = req.file.path;
+                image.save(()=>{
+                    if(err){
+                        console.log(err);
+                    } else {
+                        res.redirect("/api/images/");
+                    }
+                })
+            }
+        })
+    }).get(function(req, res) {
+        Image.find(function(err, images) {
+            if (err) {
+                res.status(500).send(err);
+                return;
+            }
+            res.status(200).send(images);
+            return;
+        });
+    });
