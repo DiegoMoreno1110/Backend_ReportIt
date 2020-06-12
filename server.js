@@ -9,7 +9,6 @@ var Admin = require('./models/admins');
 
 const fs = require("fs");
 const upload = require("./multer/storage");
-var Image = require('./models/image');
 const { get } = require('http');
 
 /*---------------*/
@@ -211,78 +210,87 @@ router.route('/users/:id_user')
 /*--------------------------*/
 
 router.route('/reports')
-    .post(async function(req, resp) {
-        var report = new Report();
-        report.nombre = req.body.nombre;
-        report.titulo = req.body.titulo;
-        report.fecha = req.body.fecha;
-        report.descripcion = req.body.descripcion;
-        report.foto = req.body.foto;
-
-
-        if (report.titulo == "") {
-            resp.status(400).send({ error: "El titulo está vacío" });
-            return;
-        }
-
-        if (report.nombre == "") {
-            resp.status(400).send({ error: "El nombre está vacío" });
-            return;
-        }
-
-        if (report.fecha == "") {
-            resp.status(400).send({ error: "La fecha está vacío" });
-            return;
-        }
-
-        if (report.descripcion == "") {
-            resp.status(400).send({ error: "La descripcion está vacío" });
-            return;
-        }
-
-        if (report.foto == "") {
-            resp.status(400).send({ error: "La foto está vacío" });
-            return;
-        }
-
-
-        try {
-            await report.save(function(err) {
-                if (err) {
-                    console.log(err);
-                    resp.status(500).send({ mensaje: err.message });
+    .post(async function(req, res) {
+        upload(req, res, async function(err){
+            if(req.file == null || req.file == undefined || req.file == ""){
+                res.status(400).send({ error: "El campo imagen está vacío" });
+                return;
+            } else {
+                //console.log(req.file);
+                let report = new Report();
+                report.nombre = req.body.nombre;
+                report.titulo = req.body.titulo;
+                report.fecha = req.body.fecha;
+                report.descripcion = req.body.descripcion;
+                if (report.titulo == "") {
+                    res.status(400).send({ error: "El titulo está vacío" });
+                    return;
+                }else if (report.nombre == "") {
+                    res.status(400).send({ error: "El nombre está vacío" });
+                    return;
+                }else if (report.fecha == "") {
+                    res.status(400).send({ error: "La fecha está vacío" });
+                    return;
+                }else if (report.descripcion == "") {
+                    res.status(400).send({ error: "La descripcion está vacío" });
                     return;
                 }
+                /* Tesseract JS */
+                const { createWorker } = require('tesseract.js');
+                const worker = createWorker();
+                async function getTextFromImage(path) {
+                    await worker.load()
+                    await worker.loadLanguage('eng')
+                    await worker.initialize('eng')
+                    const { data: { text } } = await worker.recognize('./images/' + path);
+                    await worker.terminate()
+                    return text
+                }
+                /* Aqui termina tesseract */
+                let result = await getTextFromImage(req.file.filename);
+                report.foto = result.replace(/\n/g, '');
 
-                resp.json({ mensaje: 'Reporte creado' });
-                return;
-            });
-        } catch (error) {
-            if (error.name == "ValidatorError") {
-                resp.status(400).send({ error: error.message });
-            } else {
-                resp.status(500).send({ mensaje: error })
+                try {
+                    await report.save(function(err) {
+                        if (err) {
+                            console.log(err);
+                            res.status(500).send({ mensaje: err.message });
+                            return;
+                        }
+                        res.json({ mensaje: 'Reporte creado' });
+                        return;
+                    });
+                } catch (error) {
+                    if (error.name == "ValidatorError") {
+                        res.status(400).send({ error: error.message });
+                    } else {
+                        res.status(500).send({ mensaje: error })
+                    }
+                    return;
+                }
             }
+        });
+    }).get(function(req, res) {
+        Report.find(function(err, reports) {
+            if (err) {
+                res.status(500).send(err);
+                return;
+            }
+            res.status(200).send(reports);
             return;
-        }
-    }).get(function(req, resp) {
-
+        });
+        /*
         limite = parseInt(req.body.limite);
         titulo = req.body.titulo;
-
         if (titulo != "" || titulo == null) {
             Report.find({ titulo: titulo }, function(err, reports) {
                 if (err) {
                     resp.status(500).send(err);
                 }
-
                 resp.status(200).send(reports);
                 return;
-
             });
-
         } else {
-
             Report.find(function(err, reports) {
                 if (err) {
                     resp.status(500).send(err);
@@ -290,11 +298,10 @@ router.route('/reports')
 
                 resp.status(200).send(reports);
                 return;
-
             }).limit(limite);
         }
+        */
     });
-
 
 router.route('/reports/:id_report')
     .get(function(req, res) {
@@ -462,53 +469,3 @@ router.route('/admins/:id_admin')
             res.status(200).json({ mensaje: "Admin eliminado con exito" })
         });
     });
-
-/**
- * Declaracion de API image
- */
-router.route('/images')
-    .post(async function(req, res) {
-        upload(req, res, async function(err){
-            if(req.file == null || req.file == undefined || req.file == ""){
-                return;
-            } else {
-                console.log(req.file);
-                let image = new Image();
-                image.name = req.file.originalname;
-                image.contentType = req.file.mimetype;
-                image.path = req.file.path;
-                /* Tesseract JS */
-                const { createWorker } = require('tesseract.js');
-                const worker = createWorker();
-                async function getTextFromImage(path) {
-                    await worker.load()
-                    await worker.loadLanguage('eng')
-                    await worker.initialize('eng')
-                    const { data: { text } } = await worker.recognize('./images/' + path);
-                    await worker.terminate()
-                    return text
-                }
-                /* Aqui termina tesseract */
-                let result = await getTextFromImage(req.file.filename);
-                image.text = result.replace(/\n/g, '');
-                image.save(()=>{
-                    if(err){
-                        console.log(err);
-                    } else {
-                        console.log("Imagen agregada");
-                        res.redirect("/api/images/");
-                    }
-                })
-            }
-        })
-    }).get(function(req, res) {
-        Image.find(function(err, images) {
-            if (err) {
-                res.status(500).send(err);
-                return;
-            }
-            res.status(200).send(images);
-            return;
-        });
-    });
-

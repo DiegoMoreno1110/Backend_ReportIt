@@ -2,11 +2,11 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 
 var reportSchema = new Schema({
-    titulo: {
+    nombre: {
         type: String,
         required: true
     },
-    nombre: {
+    titulo: {
         type: String,
         required: true
     },
