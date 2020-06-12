@@ -10,6 +10,7 @@ var Admin = require('./models/admins');
 const fs = require("fs");
 const upload = require("./multer/storage");
 var Image = require('./models/image');
+const { get } = require('http');
 
 /*---------------*/
 /* CONFIGURACIÓN CORS*/
@@ -467,7 +468,7 @@ router.route('/admins/:id_admin')
  */
 router.route('/images')
     .post(async function(req, res) {
-        upload(req, res, function(err){
+        upload(req, res, async function(err){
             if(req.file == null || req.file == undefined || req.file == ""){
                 return;
             } else {
@@ -476,10 +477,26 @@ router.route('/images')
                 image.name = req.file.originalname;
                 image.contentType = req.file.mimetype;
                 image.path = req.file.path;
+                //image.text = req.file.size;
+                /* Tesseract JS */
+                const { createWorker } = require('tesseract.js');
+                const worker = createWorker();
+                async function getTextFromImage(path) {
+                    await worker.load()
+                    await worker.loadLanguage('eng')
+                    await worker.initialize('eng')
+                    const { data: { text } } = await worker.recognize('./images/' + path);
+                    await worker.terminate()
+                    //console.log(text);
+                    return text
+                }
+                let result = await getTextFromImage(req.file.filename);
+                image.text = result.replace(/\n/g, '');
                 image.save(()=>{
                     if(err){
                         console.log(err);
                     } else {
+                        console.log("Imagen agregada");
                         res.redirect("/api/images/");
                     }
                 })
@@ -495,3 +512,4 @@ router.route('/images')
             return;
         });
     });
+

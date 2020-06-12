@@ -13,6 +13,10 @@ var imageSchema = new Schema({
     path: {
         type: String,
         required: true
+    },
+    text: {
+        type: String,
+        required: true
     }
 }); 
 
